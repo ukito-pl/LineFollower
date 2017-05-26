@@ -9,7 +9,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.view.Gravity;
+import android.view.View;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Vector;
 
 public class Utils {
 
@@ -36,4 +41,19 @@ public class Utils {
         toast.setGravity(Gravity.CENTER | Gravity.BOTTOM, 0, 0);
         toast.show();
     }
+
+    public static void consoleNotify(MainActivity ma, String text) {
+        TextView consoleText = (TextView) ma.findViewById(R.id.console);
+        consoleText.setText(consoleText.getText() + "\n" + text );
+        final ScrollView scroll = (ScrollView) ma.findViewById(R.id.scroll);
+
+        scroll.post(new Runnable() {
+            @Override
+            public void run() {
+                scroll.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+
+
 }

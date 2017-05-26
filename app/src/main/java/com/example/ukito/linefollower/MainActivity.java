@@ -92,11 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void consoleNotify(String text){
-        TextView consoleText = (TextView) findViewById(R.id.console);
-        consoleText.setText(consoleText.getText()+text+"\n");
-        scrollDown();
-    }
+
 
     public boolean[] checkDataButtons(int[] dataColor){
         CheckBox dataBox[] = new CheckBox[3];
@@ -145,12 +141,13 @@ public class MainActivity extends AppCompatActivity {
             drawButton(view);
             start = true;
             startButton.setText("Stop");
-            consoleNotify("Wystartowano");
+            Utils.consoleNotify(this, "Wystartowano");
         }else{
             start = false;
             startButton.setText("Start");
-            consoleNotify("Zatrzymano");
+            Utils.consoleNotify(this, "Zatrzymano");
         }
+
 
 
     }
@@ -172,13 +169,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendButton(View view){
-        consoleNotify("Parametry wysłano");
+        Utils.consoleNotify(this, "Parametry wysłano");
     }
 
-    public void scrollDown(){
-        ScrollView scroll = (ScrollView) findViewById(R.id.scroll);
-        scroll.fullScroll(View.FOCUS_DOWN);
-    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -202,26 +196,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void stopScan() {
-        consoleNotify("Poszukiwanie zakończone");
-        consoleNotify("Znalezione urządzenia:");
+        Utils.consoleNotify(this,"Poszukiwanie zakończone");
+        Utils.consoleNotify(this, "Znalezione urządzenia:");
         if(!mBLEDevices.isEmpty()) {
             int n = mBLEDevices.size();
             for (int i = 0; i < n; i++){
-                consoleNotify(mBLEDevices.get(i).getName());
-                consoleNotify(mBLEDevices.get(i).getAddress());
-                consoleNotify(Integer.toString(mBLEDevices.get(i).getRSSI()));
+                Utils.consoleNotify(this, mBLEDevices.get(i).getName());
+                Utils.consoleNotify(this, mBLEDevices.get(i).getAddress());
+                Utils.consoleNotify(this, Integer.toString(mBLEDevices.get(i).getRSSI()));
             }
         }else{
-            consoleNotify("Brak");
+            Utils.consoleNotify(this, "Brak");
         }
-        consoleNotify("Nie udało się połaczyć");
+        Utils.consoleNotify(this, "Nie udało się połaczyć");
         CheckBox connectBox = (CheckBox) findViewById(R.id.connectBox);
         connectBox.setChecked(false);
         mBLEScanner.stop();
     }
 
     public void startScan(){
-        consoleNotify("Poszukiwanie urządzeń");
+        Utils.consoleNotify(this, "Poszukiwanie urządzeń");
 
         mBLEDevices.clear();
 
@@ -233,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         if(!mBLEDevices.isEmpty()) {
             int n = mBLEDevices.size();
             for (int i = 0; i < n; i++){
-                if (mBLEDevices.get(i).getAddress() == address){
+                if (mBLEDevices.get(i).getAddress().equals(address)){
                     return i;
                 }
             }
@@ -245,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
         String address = bluetoothDevice.getAddress();
         int i = find(address);
         if(i == -1){
-            consoleNotify("Znaleziono urządzenie");
+            Utils.consoleNotify(this, "Znaleziono urządzenie");
             BLEDevice ble_device = new BLEDevice(bluetoothDevice);
             ble_device.setRSSI(new_rssi);
 
