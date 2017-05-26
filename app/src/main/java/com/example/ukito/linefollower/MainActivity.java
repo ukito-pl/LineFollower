@@ -1,6 +1,7 @@
 package com.example.ukito.linefollower;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +32,8 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.util.Vector;
+
 public class MainActivity extends AppCompatActivity {
 
     /**
@@ -46,11 +49,14 @@ public class MainActivity extends AppCompatActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
+    public static final int REQUEST_ENABLE_BT = 1;
+
     private ViewPager mViewPager;
     public DataCollector dataCollector;
     public boolean start = false;
     private BluetoothAdapter mBluetoothAdapter;
-
+    private BLEScanner  mBLEScanner;
+    public Vector<BLEDevice> mBLEDevices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,9 +86,17 @@ public class MainActivity extends AppCompatActivity {
         });*/
         dataCollector = new DataCollector();
 
+        mBLEScanner = new BLEScanner(this,7500,-150);
+        mBLEDevices = new Vector<>();
+        Utils.requestUserBluetooth(this);
 
     }
 
+    public void consoleNotify(String text){
+        TextView consoleText = (TextView) findViewById(R.id.console);
+        consoleText.setText(consoleText.getText()+text+"\n");
+        scrollDown();
+    }
 
     public boolean[] checkDataButtons(int[] dataColor){
         CheckBox dataBox[] = new CheckBox[3];
@@ -131,15 +145,12 @@ public class MainActivity extends AppCompatActivity {
             drawButton(view);
             start = true;
             startButton.setText("Stop");
-            TextView consoleText = (TextView) findViewById(R.id.console);
-            consoleText.setText(consoleText.getText()+"Wystartowano"+"\n");
+            consoleNotify("Wystartowano");
         }else{
             start = false;
             startButton.setText("Start");
-            TextView consoleText = (TextView) findViewById(R.id.console);
-            consoleText.setText(consoleText.getText()+"Zatrzymano"+"\n");
+            consoleNotify("Zatrzymano");
         }
-        scrollDown();
 
 
     }
@@ -147,33 +158,21 @@ public class MainActivity extends AppCompatActivity {
     public void connect(View view){
         CheckBox connectBox = (CheckBox) findViewById(R.id.connectBox);
         if(connectBox.isChecked()){
-            TextView consoleText = (TextView) findViewById(R.id.console);
-            consoleText.setText(consoleText.getText()+"Połączono"+"\n");
+            if(!mBLEScanner.isScanning()){
+                startScan();
+            }else {
+                stopScan();
+            }
+
+
         }else{
-            TextView consoleText = (TextView) findViewById(R.id.console);
-            consoleText.setText(consoleText.getText()+"Nie połączono"+"\n");
+            stopScan();
         }
-        scrollDown();
 
-
-
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            final BluetoothManager bluetoothManager =
-                    (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            mBluetoothAdapter = bluetoothManager.getAdapter();
-
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
-        }else {
-            mBluetoothAdapter.disable();
-
-        }
     }
 
     public void sendButton(View view){
-        TextView consoleText = (TextView) findViewById(R.id.console);
-        consoleText.setText(consoleText.getText()+"Parametry wysłano"+"\n");
-        scrollDown();
+        consoleNotify("Parametry wysłano");
     }
 
     public void scrollDown(){
@@ -200,6 +199,63 @@ public class MainActivity extends AppCompatActivity {
         //}
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void stopScan() {
+        consoleNotify("Poszukiwanie zakończone");
+        consoleNotify("Znalezione urządzenia:");
+        if(!mBLEDevices.isEmpty()) {
+            int n = mBLEDevices.size();
+            for (int i = 0; i < n; i++){
+                consoleNotify(mBLEDevices.get(i).getName());
+                consoleNotify(mBLEDevices.get(i).getAddress());
+                consoleNotify(Integer.toString(mBLEDevices.get(i).getRSSI()));
+            }
+        }else{
+            consoleNotify("Brak");
+        }
+        consoleNotify("Nie udało się połaczyć");
+        CheckBox connectBox = (CheckBox) findViewById(R.id.connectBox);
+        connectBox.setChecked(false);
+        mBLEScanner.stop();
+    }
+
+    public void startScan(){
+        consoleNotify("Poszukiwanie urządzeń");
+
+        mBLEDevices.clear();
+
+        mBLEScanner.start();
+
+    }
+
+    public int find(String address){
+        if(!mBLEDevices.isEmpty()) {
+            int n = mBLEDevices.size();
+            for (int i = 0; i < n; i++){
+                if (mBLEDevices.get(i).getAddress() == address){
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    public void addDevice(BluetoothDevice bluetoothDevice, int new_rssi) {
+        String address = bluetoothDevice.getAddress();
+        int i = find(address);
+        if(i == -1){
+            consoleNotify("Znaleziono urządzenie");
+            BLEDevice ble_device = new BLEDevice(bluetoothDevice);
+            ble_device.setRSSI(new_rssi);
+
+            mBLEDevices.add(ble_device);
+
+
+        }else{
+            mBLEDevices.get(i).setRSSI(new_rssi);
+        }
+
     }
 
     /**
