@@ -2,13 +2,7 @@ package com.example.ukito.linefollower;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.PorterDuff;
 import android.support.design.widget.TabLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -25,8 +19,6 @@ import android.view.ViewGroup;
 
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ScrollView;
-import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
@@ -52,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int REQUEST_ENABLE_BT = 1;
 
     private ViewPager mViewPager;
-    public DataCollector dataCollector;
+    public DataManager dataManager;
     public boolean start = false;
     private BluetoothAdapter mBluetoothAdapter;
     private BLEScanner  mBLEScanner;
@@ -84,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });*/
-        dataCollector = new DataCollector();
+        dataManager = new DataManager();
 
         mBLEScanner = new BLEScanner(this,7500,-150);
         mBLEDevices = new Vector<>();
@@ -110,6 +102,23 @@ public class MainActivity extends AppCompatActivity {
         return data;
     }
 
+    public boolean[] checkDataButtons(){
+        CheckBox dataBox[] = new CheckBox[3];
+        dataBox[0] = (CheckBox) findViewById(R.id.data1);
+        dataBox[1] = (CheckBox) findViewById(R.id.data2);
+        dataBox[2] = (CheckBox) findViewById(R.id.data3);
+        boolean data[] = new boolean[3];
+
+        for (int i = 0; i<3 ;i++) {
+            if(dataBox[i].isChecked()){
+                data[i] = true;
+            }
+        }
+        return data;
+    }
+
+
+
     public void drawButton(View view){
         GraphView graph = (GraphView) findViewById(R.id.graph);
         graph.removeAllSeries();
@@ -117,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         boolean[] dataShow = checkDataButtons(dataColor);
         for (int i =0; i<dataShow.length;i++){
             if(dataShow[i] == true) {
-                LineGraphSeries<DataPoint> series = dataCollector.getLineDataSeries(i);
+                LineGraphSeries<DataPoint> series = dataManager.getLineDataSeries(i);
                 series.setColor(dataColor[i]);
                 graph.addSeries(series);
             }
@@ -170,6 +179,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendButton(View view){
         Utils.consoleNotify(this, "Parametry wysłano");
+    }
+
+    public void saveButton(View view){
+        boolean check[] = checkDataButtons();
+        for (int i = 0; i <check.length; i++) {
+            if(check[i]) {
+                dataManager.saveData(this,i);
+            }
+        }
     }
 
 
