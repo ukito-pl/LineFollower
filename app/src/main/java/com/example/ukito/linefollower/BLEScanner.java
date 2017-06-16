@@ -20,6 +20,8 @@ public class BLEScanner {
 
     private long scanPeriod;
     private int signalStrength;
+    private Runnable stopRun1;
+    private Runnable stopRun2;
 
     public BLEScanner(MainActivity mainActivity, long scanPeriod, int signalStrength){
         ma = mainActivity;
@@ -30,6 +32,8 @@ public class BLEScanner {
 
         final BluetoothManager bluetoothManager = (BluetoothManager) ma.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter =bluetoothManager.getAdapter();
+
+
     }
 
     public boolean isScanning(){
@@ -63,10 +67,12 @@ public class BLEScanner {
 
                     ma.stopScan();
                 }
-            }, scanPeriod);
+            },scanPeriod);
 
             mScanning = true;
             mBluetoothAdapter.startLeScan(mLeScanCallback);
+        }else{
+
         }
     }
 
