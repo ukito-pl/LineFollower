@@ -33,14 +33,14 @@
         tools:layout_constraintLeft_creator="1" />
 
     <EditText
-        android:id="@+id/editText6"
+        android:id="@+id/V"
         android:layout_width="48dp"
         android:layout_height="38dp"
         android:layout_marginEnd="59dp"
         android:layout_marginRight="59dp"
         android:layout_marginTop="37dp"
         android:ems="10"
-        android:hint="D"
+        android:hint="V"
         android:inputType="numberDecimal"
         android:selectAllOnFocus="false"
         android:textAlignment="center"
@@ -49,7 +49,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView4" />
 
     <EditText
-        android:id="@+id/editText8"
+        android:id="@+id/DFactor"
         android:layout_width="48dp"
         android:layout_height="38dp"
         android:layout_marginEnd="107dp"
@@ -58,18 +58,18 @@
         android:layout_marginStart="107dp"
         android:layout_marginTop="37dp"
         android:ems="10"
-        android:hint="I"
+        android:hint="D"
         android:inputType="numberDecimal"
         android:textAlignment="center"
         android:textSize="12sp"
-        app:layout_constraintLeft_toLeftOf="@+id/editText7"
-        app:layout_constraintRight_toRightOf="@+id/editText6"
+        app:layout_constraintLeft_toLeftOf="@+id/PFactor"
+        app:layout_constraintRight_toRightOf="@+id/V"
         app:layout_constraintTop_toBottomOf="@+id/textView4"
         tools:layout_constraintLeft_creator="1"
         tools:layout_constraintRight_creator="1" />
 
     <EditText
-        android:id="@+id/editText7"
+        android:id="@+id/PFactor"
         android:layout_width="48dp"
         android:layout_height="38dp"
         android:layout_marginLeft="63dp"
@@ -95,7 +95,7 @@
         android:onClick="sendButton"
         android:text="Wyślij parametry"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText8" />
+        app:layout_constraintTop_toBottomOf="@+id/DFactor" />
 
     <Button
         android:id="@+id/startButton"
@@ -113,7 +113,7 @@
         app:layout_constraintHorizontal_bias="0.75"
         app:layout_constraintLeft_toRightOf="@+id/sendButton"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText8" />
+        app:layout_constraintTop_toBottomOf="@+id/DFactor" />
 
     <ScrollView
         android:id="@+id/scroll"

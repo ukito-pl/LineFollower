@@ -30,6 +30,7 @@ import android.view.ViewGroup;
 
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
@@ -170,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                 series.setColor(dataColor[i]);
                 graph.addSeries(series);
             }
-        }
+        }/*
         graph.getViewport().setYAxisBoundsManual(true);
         graph.getViewport().setMinY(0);
         graph.getViewport().setMaxY(1.6);
@@ -181,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
         graph.getViewport().setScalable(true);
         graph.getViewport().setScalableY(true);
-
+*/
     }
 
     public void startButton(View view){
@@ -190,11 +191,17 @@ public class MainActivity extends AppCompatActivity {
             drawButton(view);
             start = true;
             startButton.setText("Stop");
-            Utils.consoleNotify(this, "Wystartowano");
+            Utils.consoleNotify(this, "Startowanie");
+            if(mBluetoothLeService != null) {
+                mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#S1*");
+            }
         }else{
             start = false;
             startButton.setText("Start");
-            Utils.consoleNotify(this, "Zatrzymano");
+            Utils.consoleNotify(this, "Zatrzymywanie");
+            if(mBluetoothLeService != null) {
+                mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#S0*");
+            }
         }
 
 
@@ -225,7 +232,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendButton(View view){
-        Utils.consoleNotify(this, "Parametry wysłano");
+
+        EditText PFactor = (EditText) this.findViewById(R.id.PFactor);
+        EditText DFactor = (EditText) this.findViewById(R.id.DFactor);
+        EditText V = (EditText) this.findViewById(R.id.V);
+
+        String pFactor = PFactor.getText().toString();
+        final String dFactor = DFactor.getText().toString();
+        final String v = V.getText().toString();
+        Utils.consoleNotify(this, "Wysyłanie parametru P");
+        if(!pFactor.isEmpty()) {
+            if (mBluetoothLeService != null) {
+                mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#P" + pFactor + "*");
+            }
+        }else{
+            Utils.consoleNotify(this, "Nie można wysłać - brak wpisanego parametru P");
+        }
+
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Utils.consoleNotify(ma, "Wysyłanie parametru D");
+                if (!dFactor.isEmpty()) {
+                    if (mBluetoothLeService != null) {
+                        mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#D" + dFactor + "*");
+                    }
+                } else {
+                    Utils.consoleNotify(ma, "Nie można wysłać - brak wpisanego parametru D");
+                }
+            }
+        }, 200);
+
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Utils.consoleNotify(ma, "Wysyłanie parametru V");
+                if (!v.isEmpty()) {
+                    if (mBluetoothLeService != null) {
+                        mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#V" + v + "*");
+                    }
+                } else {
+                    Utils.consoleNotify(ma, "Nie można wysłać - brak wpisanego parametru V");
+                }
+            }
+        }, 400);
+
+
     }
 
     public void saveButton(View view){
@@ -285,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
                 readMyCharacteristic();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+
             }
         }
     };
