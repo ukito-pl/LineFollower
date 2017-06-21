@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.Random;
+import java.util.Vector;
 
 /**
  * Created by ukito on 15.03.2017.
@@ -17,14 +18,36 @@ import java.util.Random;
 
 public class DataManager {
 
-    public float[][] time;
-    public float[][] value;
-    public String currentData;
+    public Vector<Vector<Float>> time;
+    public Vector<Vector<Float>> value;
+    public String recData;
+    public String remData = "";
+    public int it1 = 0;
+    public int it2 = 0;
+    public int it3 = 0;
+    public int length = 2000;
+    public boolean stringToIntError = false;
+    public MainActivity ma;
+    public float minX = 0;
+    public float maxX = 0;
+    public float minY = 0;
+    public float maxY = 0;
 
-    public DataManager(){
-        time = new float[3][2000];
-        value = new float[3][2000];
-        //generateData();
+    public DataManager(MainActivity mainActivity){
+        value = new Vector<>();
+        time = new Vector<>();
+        value.setSize(3);
+        time.setSize(3);
+
+        value.set(0,new Vector<Float>());
+        value.set(1,new Vector<Float>());
+        value.set(2,new Vector<Float>());
+        time.set(0,new Vector<Float>());
+        time.set(1,new Vector<Float>());
+        time.set(2,new Vector<Float>());
+
+
+        ma = mainActivity;
 
     }
 
@@ -50,9 +73,9 @@ public class DataManager {
     public LineGraphSeries<DataPoint> getLineDataSeries(int dataNumber){
 
         DataPoint[] dataPoint;
-        dataPoint = new DataPoint[2000];
-        for(int i =0; i <2000;i++){
-            dataPoint[i] = new DataPoint( time[dataNumber][i],value[dataNumber][i]);
+        dataPoint = new DataPoint[Math.min(value.elementAt(dataNumber).size(),value.elementAt(dataNumber).size() )];
+        for(int i =0; (i <value.elementAt(dataNumber).size()) && (i <time.elementAt(dataNumber).size());i++){
+            dataPoint[i] = new DataPoint( time.elementAt(dataNumber).get(i), value.elementAt(dataNumber).get(i));
         }
         LineGraphSeries<DataPoint> series = new LineGraphSeries<>(dataPoint);
         return series;
@@ -65,79 +88,183 @@ public class DataManager {
                 dir.mkdir();
             }
             Calendar cal = Calendar.getInstance();
-            String nazwa = "/Dane "+ Integer.toString(i+1) + cal.getTime().toString() + ".csv";
+            String nazwa = "/Dane "+ Integer.toString(i+1)+ " " + cal.getTime().toString() + ".csv";
 
             CSVWriter writer = new CSVWriter(new FileWriter(dir.getAbsolutePath()+ nazwa), '\t');
 
 
-
-            for (int j = 0; j < time[i].length; j++) {
-                String[] entries = (Float.toString(time[i][j]) + "#" + Float.toString(value[i][j])).split("#");
+            for(int j =0; (j <value.elementAt(i).size()) && (j <time.elementAt(i).size());j++){
+                String[] entries = (Float.toString(time.elementAt(i).get(j)) + "#" + Float.toString(value.elementAt(i).get(j))).split("#");
                 writer.writeNext(entries);
             }
             writer.close();
-            Utils.toast(ma.getApplicationContext(), "Zapisano");
+            Utils.toast(ma.getApplicationContext(), "Zapisano w katalogu \"DanePomiarowe\" ");
         }catch(java.io.IOException e){
             Utils.toast(ma.getApplicationContext(), "Nie można zapisać");
         }
 
     }
 
-    public void addData(String dataFrame){
 
-    }
-
-    public void receiveData(String data){
-        String remData = getDataFrame(data);
-        String dataFrame = data;
+    public void receiveData(String receivedData){
+        recData = receivedData;
+        String dataFrame;
+        do {
+            dataFrame = getDataFrame(recData);
+            if(!dataFrame.isEmpty()) {
+                String data = dataFrame.substring(1, dataFrame.length() - 1); //get data between # and *
+                interpretData(data);
+            }
+        }while(!dataFrame.isEmpty());
     }
 
     public String getDataFrame(String data){
         String dataFrame = "";
-        String remData = "";
-        int copy = 0;
-        int j = 0;
-        int i = 0;
-        boolean endOfFrame = false;
-        for (; (i<data.length() || !endOfFrame);i++){
-            if (data.charAt(i) == '#' && copy == 0){	//if starting # is recognized
-                copy = 1;
-                i++;
-            }
-            if (data.charAt(i) == '*' && copy == 1){	//if ending * is recognized
-                copy = 0;
-                endOfFrame = true;
-                data = dataFrame;
-            }
-            if(copy == 1){
-                dataFrame = dataFrame + data.charAt(i);
+        data = remData + data;
+        if(!data.isEmpty()) {
+            int endIndex = -1;
+            int startIndex = -1;
+            boolean startOfFrame = false;
+            boolean endOfFrame = false;
+            for (int i = 0; (i < data.length() && !endOfFrame); i++) {
+                if (data.charAt(i) == '#' && startOfFrame == false) {    //if starting # is recognized
+                    startOfFrame = true;
+                    startIndex = i;
 
-                j++;
-            }
-        }
-        if(endOfFrame) {
-            for (; i < data.length(); i++) {
-                if (data.charAt(i) == '#' && copy == 0) {    //if starting # is recognized
-                    copy = 1;
-                    i++;
-                }
-                if (data.charAt(i) == '*' && copy == 1) {    //if ending * is recognized
-                    copy = 0;
+                } else if (data.charAt(i) == '*' && startOfFrame == true) {    //if ending * is recognized
+                    startOfFrame = false;
                     endOfFrame = true;
-                }
-                if (copy == 1) {
-                    remData = remData + data.charAt(i);
-
-                    j++;
+                    endIndex = i;
+                    if (endIndex + 1 < data.length()) {
+                        remData = data.substring(endIndex + 1, data.length());
+                    }else{
+                        remData="";
+                    }
+                    dataFrame = data.substring(startIndex, endIndex + 1);
+                    recData = "";
+                    return dataFrame;
                 }
             }
-            return remData;
-        }else{
-            remData = data;
-            data = "";
-
-            return remData;
         }
+        return dataFrame;
 
     }
+
+    public void interpretData(String data){
+        char id = data.charAt(0);
+
+        data = data.substring(1, data.length());
+        int val;
+        if (!stringToIntError) {
+            switch (id) {
+                case 'L':
+                    if(ma.registerData) {
+                        val = stringToInt(data);
+                        if (val > maxY){
+                            maxY = val;
+                        }else if(val < minY){
+                            minY = val;
+                        }
+                        if (value.elementAt(0).size() >= length) {
+                            value.elementAt(0).remove(0);
+                            value.elementAt(0).add((float) val);
+                        } else {
+                            value.elementAt(0).add((float) val);
+                        }
+                        if (time.elementAt(0).size() >= length) {
+                            time.elementAt(0).remove(0);
+                            time.elementAt(0).add((float) it1 * 0.001f);
+                        } else {
+                            time.elementAt(0).add((float) it1 * 0.001f);
+                        }
+                        it1++;
+                        if (it1* 0.001f > maxX){
+                            maxX = it1* 0.001f;
+                        }
+                    }
+                    break;
+                case 'R':
+                    if(ma.registerData) {
+                        val = stringToInt(data);
+                        if (val > maxY) {
+                            maxY = val;
+                        } else if (val < minY) {
+                            minY = val;
+                        }
+                        if (value.elementAt(1).size() >= length) {
+                            value.elementAt(1).remove(0);
+                            value.elementAt(1).add((float) val);
+                        } else {
+                            value.elementAt(1).add((float) val);
+                        }
+                        if (time.elementAt(1).size() >= length) {
+                            time.elementAt(1).remove(0);
+                            time.elementAt(1).add((float) it2 * 0.001f);
+                        } else {
+                            time.elementAt(1).add((float) it2 * 0.001f);
+                        }
+                        it2++;
+                        if (it2* 0.001f > maxX) {
+                            maxX = it2* 0.001f;
+                        }
+                    }
+                    break;
+                case 'O':
+                    if(ma.registerData) {
+                        val = stringToInt(data);
+                        if (val > maxY){
+                            maxY = val;
+                        }else if(val < minY){
+                            minY = val;
+                        }
+                        if (value.elementAt(2).size() >= length) {
+                            value.elementAt(2).remove(0);
+                            value.elementAt(2).add((float) val);
+                        } else {
+                            value.elementAt(2).add((float) val);
+                        }
+                        if (time.elementAt(2).size() >= length) {
+                            time.elementAt(2).remove(0);
+                            time.elementAt(2).add((float) it3 * 0.001f);
+                        } else {
+                            time.elementAt(2).add((float) it3 * 0.001f);
+                        }
+                        it3++;
+                        if (it3* 0.001f > maxX){
+                            maxX = it3* 0.001f;
+                        }
+                    }
+                    break;
+                case 'T':
+                    Utils.consoleNotify(ma,data);
+                    break;
+            }
+        }
+    }
+
+    public int stringToInt(String textValue){
+        int i = 0;
+        if (textValue.charAt(0) == '-'){
+            i = 1;
+
+        }
+        int number = 0;
+        int multiplier = (int) Math.pow(10, textValue.length()-1);
+        for ( ; i < textValue.length(); i++){
+            if(textValue.charAt(i) >= '0' && textValue.charAt(i) <= '9') {
+                number = number + (textValue.charAt(i) - '0') * multiplier;
+                multiplier = multiplier / 10;
+            }else{
+                stringToIntError = true;
+            }
+        }
+        if (textValue.charAt(0) == '-'){
+            number = - number;
+
+        }
+        stringToIntError = false;
+        return number;
+    }
+
+
 }

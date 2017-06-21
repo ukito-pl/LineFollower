@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean mConnected = false;
     private BluetoothGattCharacteristic mGattCharacteristic;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
+    public boolean registerData = false;
 
 
 
@@ -108,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
         });*/
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
 
-        dataManager = new DataManager();
+        dataManager = new DataManager(this);
         mHandler = new Handler();
 
         mBLEScanner = new BLEScanner(this,scanPeriod,-150);
@@ -161,6 +162,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void drawButton(View view){
+        draw();
+    }
+
+    public void draw(){
         GraphView graph = (GraphView) findViewById(R.id.graph);
         graph.removeAllSeries();
         int dataColor[] = new int[3];
@@ -169,26 +174,39 @@ public class MainActivity extends AppCompatActivity {
             if(dataShow[i] == true) {
                 LineGraphSeries<DataPoint> series = dataManager.getLineDataSeries(i);
                 series.setColor(dataColor[i]);
+                series.setDrawDataPoints(true);
                 graph.addSeries(series);
+
             }
-        }/*
+        }
+
+
         graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinY(0);
-        graph.getViewport().setMaxY(1.6);
+        graph.getViewport().setMinY(dataManager.minY );
+        graph.getViewport().setMaxY(dataManager.maxY * 1.2);
 
         graph.getViewport().setXAxisBoundsManual(true);
-        graph.getViewport().setMinX(0);
-        graph.getViewport().setMaxX(4);
+        graph.getViewport().setMinX(dataManager.minX);
+        graph.getViewport().setMaxX(dataManager.maxX);
 
         graph.getViewport().setScalable(true);
+
         graph.getViewport().setScalableY(true);
-*/
+
+    }
+
+    public void registerData(View view){
+        CheckBox check =  (CheckBox) findViewById(R.id.registerData);
+        if(check.isChecked()){
+            registerData = true;
+        }else if(!check.isChecked()){
+            registerData = false;
+        }
     }
 
     public void startButton(View view){
         Button startButton = (Button) findViewById(R.id.startButton);
         if (start==false){
-            drawButton(view);
             start = true;
             startButton.setText("Stop");
             Utils.consoleNotify(this, "Startowanie");
@@ -203,8 +221,6 @@ public class MainActivity extends AppCompatActivity {
                 mBluetoothLeService.writeCharacteristic(mGattCharacteristic, "#S0*");
             }
         }
-
-
 
     }
 
@@ -336,15 +352,17 @@ public class MainActivity extends AppCompatActivity {
                 getMyCharacteristic();
                 readMyCharacteristic();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-                displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                manageData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
 
             }
         }
     };
 
-    private void displayData(String data) {
+    private void manageData(String data) {
         if (data != null) {
-            Utils.consoleNotify(this,data);
+            //Utils.consoleNotify(this,data);
+            dataManager.receiveData(data);
+            draw();
         }
     }
 
